@@ -179,7 +179,7 @@ bool HdPackLoader::LoadPack()
 			} else if(lineContent.substr(0, 5) == "<ver>") {
 				_data->Version = stoi(lineContent.substr(5));
 				if(_data->Version > BaseHdNesPack::CurrentVersion) {
-					logError("This HD Pack was built with a more recent version of Mesen - update Mesen to the latest version and try again.");
+					logError("This HD Pack was built with a more recent version of RetroStationX - update RetroStationX to the latest version and try again.");
 					return false;
 				}
 			} else if(lineContent.substr(0, 7) == "<scale>") {

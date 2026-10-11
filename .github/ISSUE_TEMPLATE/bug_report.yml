@@ -1,0 +1,76 @@
+name: Bug report
+description: Something doesn't work or doesn't emulate correctly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please search [existing issues](https://github.com/ksdevla/RetroStationX/issues) first.
+        Report RetroStationX problems here, not to MesenCE or Mesen.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Shown in Help → About (version and commit).
+      placeholder: "2.2.1 (abc1234)"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - Linux
+        - Linux (AppImage)
+        - SteamOS / Steam Deck
+        - macOS (Intel)
+        - macOS (Apple Silicon)
+    validations:
+      required: true
+  - type: dropdown
+    id: system
+    attributes:
+      label: Emulated system
+      options:
+        - Not system-specific (UI, settings, etc.)
+        - NES / Famicom / FDS
+        - SNES / Super Famicom
+        - Game Boy / Game Boy Color / Super Game Boy
+        - Game Boy Advance
+        - PC Engine / TurboGrafx-16 / CD
+        - Master System / Game Gear / SG-1000 / ColecoVision
+        - WonderSwan / WonderSwan Color
+    validations:
+      required: true
+  - type: input
+    id: game
+    attributes:
+      label: Game or test ROM
+      description: Name and region or revision. Don't attach or link commercial ROMs.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: What you expected to happen, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Load ...
+        2. Go to ...
+        3. ...
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and screenshots
+      description: Paste anything relevant from Tools → Log Window, and attach screenshots or save states if they help.
+  - type: checkboxes
+    id: upstream
+    attributes:
+      label: Upstream
+      options:
+        - label: I checked whether this also happens in the latest MesenCE build (optional, but helpful).

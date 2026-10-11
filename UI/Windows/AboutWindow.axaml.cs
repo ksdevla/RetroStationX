@@ -53,6 +53,7 @@ namespace Mesen.Windows
 				new("scale2x", "","GPL2+", "https://github.com/amadvance/scale2x/"),
 				new("Super Eagle + 2xSai", "", "GPL3", "https://vdnoort.home.xs4all.nl/emulation/2xsai/"),
 				new("xBRZ", "","GPL3", "https://sourceforge.net/projects/xbrz/"),
+				new("hqx", "", "LGPL", "https://github.com/grom358/hqx"),
 				new("blip_buf", "blargg", "LGPL", "http://slack.net/~ant/"),
 				new("nes_ntsc", "blargg", "LGPL", "http://slack.net/~ant/"),
 				new("snes_ntsc", "blargg", "LGPL", "http://slack.net/~ant/"),
@@ -75,6 +76,8 @@ namespace Mesen.Windows
 			LibraryList.Sort((a, b) => a.Name.CompareTo(b.Name));
 
 			AcknowledgeList = new List<AboutListEntry>() {
+				new("Mesen (Sour)", "Sour", "GPL3", "https://github.com/SourMesen/Mesen2"),
+				new("MesenCE", "MesenCE contributors", "GPL3", "https://github.com/nesdev-org/MesenCE"),
 				new("ares (Near)", "Near", "ISC", "https://github.com/ares-emulator/ares"),
 				new("NesDev Wiki/Forums Contributors", "", "", "https://www.nesdev.org/"),
 				new("SameBoy (LIJI32)", "LIJI32", "MIT", "https://github.com/LIJI32/SameBoy"),
@@ -86,7 +89,7 @@ namespace Mesen.Windows
 
 			InitializeComponent();
 
-			this.GetControl<TextBlock>("lblCopyright").Text = $"Copyright 2014-2026 Sour, 2026-{DateTime.Now.Year} contributors";
+			this.GetControl<TextBlock>("lblCopyright").Text = $"Copyright 2014-2026 Sour, 2026-{DateTime.Now.Year} MesenCE contributors, 2026-{DateTime.Now.Year} {AppInfo.CopyrightHolder}";
 		}
 
 		private void InitializeComponent()
@@ -108,12 +111,12 @@ namespace Mesen.Windows
 
 		private void OnMesenLinkTapped(object? sender, TappedEventArgs e)
 		{
-			ApplicationHelper.OpenBrowser("https://github.com/nesdev-org/MesenCE");
+			ApplicationHelper.OpenBrowser(AppInfo.RepoUrl);
 		}
 
 		private void OnCommitLinkTapped(object? sender, TappedEventArgs e)
 		{
-			ApplicationHelper.OpenBrowser("https://github.com/nesdev-org/MesenCE/commit/" + BuildSha);
+			ApplicationHelper.OpenBrowser(AppInfo.CommitUrl + BuildSha);
 		}
 	}
 

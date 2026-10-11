@@ -5,12 +5,14 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <Nullable>enable</Nullable>
     <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
-    <AssemblyName>Mesen</AssemblyName>
+    <AssemblyName>RetroStationX</AssemblyName>
     <RootNamespace>Mesen</RootNamespace>
     <StartupObject>Mesen.Program</StartupObject>
     <Version>2.2.1</Version>
     <FileVersion>2.2.1</FileVersion>
-    <Copyright>(C) 2014-2026 Sour</Copyright>
+    <Product>RetroStationX</Product>
+    <Description>RetroStationX - multi-system emulator (fork of MesenCE)</Description>
+    <Copyright>(C) 2014-2026 Sour, 2026 MesenCE contributors, 2026 ksdevla</Copyright>
   </PropertyGroup>
 	<PropertyGroup>
 		<!-- This security feature is new in .NET 9 and can decrease performance by around 10% when enabled. -->
@@ -49,15 +51,15 @@
 		<DefineConstants></DefineConstants>
 	</PropertyGroup>
 	<PropertyGroup>
-		<CFBundleName>Mesen</CFBundleName> <!-- Also defines .app file name -->
-		<CFBundleDisplayName>Mesen</CFBundleDisplayName>
-		<CFBundleIdentifier>ca.mesen</CFBundleIdentifier>
+		<CFBundleName>RetroStationX</CFBundleName> <!-- Also defines .app file name -->
+		<CFBundleDisplayName>RetroStationX</CFBundleDisplayName>
+		<CFBundleIdentifier>io.github.ksdevla.retrostationx</CFBundleIdentifier>
 		<CFBundleVersion>1.0.0</CFBundleVersion>
 		<CFBundleShortVersionString>1.0</CFBundleShortVersionString>
 		<CFBundlePackageType>APPL</CFBundlePackageType>
 		<CFBundleSignature>????</CFBundleSignature>
-		<CFBundleExecutable>Mesen</CFBundleExecutable>
-		<CFBundleIconFile>MesenIcon.icns</CFBundleIconFile> <!-- Will be copied from output directory -->
+		<CFBundleExecutable>RetroStationX</CFBundleExecutable>
+		<CFBundleIconFile>AppIcon.icns</CFBundleIconFile> <!-- Will be copied from output directory -->
 		<NSPrincipalClass>NSApplication</NSPrincipalClass>
 		<NSHighResolutionCapable>true</NSHighResolutionCapable>
 	</PropertyGroup>
@@ -103,7 +105,7 @@
 		<AvaloniaNameGeneratorIsEnabled>False</AvaloniaNameGeneratorIsEnabled>
 	</PropertyGroup>
 	<ItemGroup>
-		<TrimmerRootAssembly Include="Mesen" />
+		<TrimmerRootAssembly Include="RetroStationX" />
 		<TrimmerRootAssembly Include="AvaloniaEdit" />
 		<TrimmerRootAssembly Include="Dock.Avalonia" />
 		<TrimmerRootAssembly Include="Dock.Model" />
@@ -685,7 +687,7 @@
 		<Copy SourceFiles="@(NugetDependencyFiles)" DestinationFolder="$(OutDir)Dependencies" ContinueOnError="WarnAndContinue" />
 		<Touch Files="$(OutDir)NugetTimestamp.txt" AlwaysCreate="True" Condition="'$(MSBuildLastTaskResult)' == 'true'" />
 
-		<Copy Condition="'$(RuntimeIdentifier)'=='osx-x64' Or '$(RuntimeIdentifier)'=='osx-arm64'" SourceFiles="./Assets/MesenIcon.icns" DestinationFolder="$(OutDir)" />
+		<Copy Condition="'$(RuntimeIdentifier)'=='osx-x64' Or '$(RuntimeIdentifier)'=='osx-arm64'" SourceFiles="./Assets/AppIcon.icns" DestinationFolder="$(OutDir)" />
 		<ZipDirectory SourceDirectory="$(OutDir)Dependencies" DestinationFile="$(ProjectDir)Dependencies.zip" Overwrite="true" />
 	</Target>
 

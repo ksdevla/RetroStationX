@@ -27,6 +27,8 @@ namespace Mesen.ViewModels
 		[ObservableProperty] public partial int Progress { get; internal set; }
 		public UpdateFileInfo? FileInfo => _fileInfo;
 
+		public static bool IsUpdateFeedConfigured => !string.IsNullOrWhiteSpace(AppInfo.UpdateFeedUrl);
+
 		private UpdateFileInfo? _fileInfo;
 
 		public UpdatePromptViewModel(UpdateInfo updateInfo, UpdateFileInfo? file)
@@ -40,16 +42,20 @@ namespace Mesen.ViewModels
 
 		public static async Task<UpdatePromptViewModel?> GetUpdateInformation(bool silent)
 		{
+			if(!IsUpdateFeedConfigured) {
+				return null;
+			}
+
 			UpdateInfo? updateInfo = null;
 			try {
 				using(var client = new HttpClient()) {
-					string updateData = await client.GetStringAsync("https://raw.githubusercontent.com/nesdev-org/MesenAutoUpdate/refs/heads/main/latestversion.json");
+					string updateData = await client.GetStringAsync(AppInfo.UpdateFeedUrl);
 					updateInfo = (UpdateInfo?)JsonSerializer.Deserialize(updateData, typeof(UpdateInfo), MesenSerializerContext.Default);
 
 					if(
 						updateInfo == null ||
 						updateInfo.Files == null ||
-						updateInfo.Files.Where(f => f.DownloadUrl == null || (!f.DownloadUrl.StartsWith("https://github.com/nesdev-org/") && !f.DownloadUrl.StartsWith("https://github.com/SourMesen/"))).Count() > 0
+						updateInfo.Files.Where(f => f.DownloadUrl == null || !f.DownloadUrl.StartsWith(AppInfo.UpdateDownloadUrlPrefix)).Count() > 0
 					) {
 						return null;
 					}
@@ -98,7 +104,7 @@ namespace Mesen.ViewModels
 				return false;
 			}
 
-			string downloadPath = Path.Combine(ConfigManager.BackupFolder, "Mesen." + LatestVersion.ToString(3));
+			string downloadPath = Path.Combine(ConfigManager.BackupFolder, AppInfo.Name + "." + LatestVersion.ToString(3));
 
 			using(var client = new HttpClient()) {
 				HttpResponseMessage response = await client.GetAsync(_fileInfo.DownloadUrl, HttpCompletionOption.ResponseHeadersRead);

@@ -1,33 +1,76 @@
-# Licensing
+# Contributing to RetroStationX
 
-Although MesenCE is currently GPL, we are interested in removing GPL code over time and potentially relicensing the emulator under a more permissive license, such as MIT, at some point in the future. Thus, if you submit code to MesenCE, you agree that:
-- **Your code is licensed under the MIT License.** You may explicitly provide it under additional optional licenses if you wish.
-- Your submission does not contain code that is incompatible with the MIT License. (For example, your submission may not be based on GPL code or include a GPL library.)
+Thanks for helping out. This page covers how to report problems and how to send changes.
 
-# AI / LLM code
+## Reporting bugs and requesting features
 
-**AI-generated code is prohibited.** While you may consult with LLMs, all submitted code must be written and understood by you, the contributor, to ensure accuracy and copyright integrity.
+- Search the [existing issues](https://github.com/ksdevla/RetroStationX/issues) first.
+- Use the **Bug report** or **Feature request** template when you open an issue.
+- For emulation bugs, include the system, the game or test ROM, your RetroStationX version or commit (shown in **Help → About**), and steps to reproduce.
+- Report RetroStationX problems here, not to MesenCE or Mesen. If you can reproduce the bug in an official MesenCE build, it is also worth reporting it [upstream](https://github.com/nesdev-org/MesenCE/issues).
+- Report security vulnerabilities privately. See [SECURITY.md](SECURITY.md).
 
-# Style
+## Licensing of contributions
 
-MesenCE requires a consistent style across the codebase. Most of this style is currently enforced with clang-format (for C++) and dotnet format (for C#), and these must be run on any code submitted to MesenCE. In Visual Studio, these can be configured to run automatically when saving. On other platforms, you can use these commands:
+RetroStationX is licensed under the **GNU GPL v3.0 or later**. By submitting a contribution, you agree that it is licensed under the same terms (inbound = outbound).
 
-- clang-format: `find ./ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i`
-- dotnet format: `dotnet format`
+- Only submit code that you wrote or that has a license compatible with GPL v3. Keep existing copyright and license headers.
+- Third-party code needs its license listed in [NOTICE.md](NOTICE.md) and in the About window (`UI/Windows/AboutWindow.axaml.cs`).
 
-In addition, we require the following naming conventions:
+### Sending changes upstream
 
-- ExampleFunction
-- exampleVariable
-- _exampleMemberVariable
+Work from this fork can also be offered to [MesenCE](https://github.com/nesdev-org/MesenCE), but MesenCE has stricter rules. It asks that contributions be **MIT-licensed** and must not be based on GPL code, and it **does not accept AI-generated code**. Read [MesenCE's CONTRIBUTING.md](https://github.com/nesdev-org/MesenCE/blob/master/CONTRIBUTING.md) before you submit there.
 
-When in doubt, follow the formatting you see elsewhere in the project.
+## Workflow
 
-# Guidance
+1. Fork the repository and create a branch from `master`.
+2. Make your change. Keep each pull request focused on one topic.
+3. Format your code and make sure it builds without warnings (see below).
+4. Open a pull request. Explain what changed and why, and attach test ROMs or screenshots when they help.
 
-- Performance: Changes may be rejected if they cause a drop in maximum FPS (press F9 to run at an unlocked framerate and F10 to view the FPS). Where possible, ensure that your changes avoid doing things like adding if statements to hot paths.
-- Warnings: The MesenCE MSVC builds treat warnings as errors. These must be resolved before code can be accepted.
-- Commit messages: Including context and test ROMs with your pull requests allows us to more easily and quickly evaluate the code. If we don't understand a change, it is less likely to be accepted.
-- Usefulness: Changes and features may not be accepted if we determine they're not useful enough or they are out of scope. MesenCE is not intended to cover every niche use case.
+For large changes such as new systems, big refactors, or UI redesigns, open an issue first to discuss the approach.
 
-**Pull requests may be rejected for a variety of reasons, even if they are functional. Please consult with the team before making any significant changes.**
+## Building
+
+See [COMPILING.md](COMPILING.md). The Windows (MSVC) and C# builds treat warnings as errors, so fix them before you submit.
+
+## Code style
+
+CI enforces formatting with clang-format (C++) and `dotnet format` (C#). Run both before you commit. Visual Studio can also run them on save.
+
+```bash
+find ./ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i
+```
+
+```bash
+dotnet format
+```
+
+Naming conventions:
+
+- `ExampleFunction`
+- `exampleVariable`
+- `_exampleMemberVariable`
+
+When unsure, follow the style of the surrounding code.
+
+## Guidelines
+
+- **Performance:** Measure the maximum FPS before and after your change. Press F9 to unlock the frame rate and F10 to show the FPS counter. Keep extra branches out of hot paths such as CPU and PPU loops.
+- **Compatibility:** Don't break save states, movies, or settings files unless there is no other way. If you must, explain why in the PR.
+- **Upstream merges:** This fork regularly merges from MesenCE. Avoid renaming or moving upstream files without a good reason, and keep internal names (`Mesen.*` namespaces, `MesenCore`) unchanged. Put fork branding in `UI/AppInfo.cs`.
+- **Scope:** Changes may be declined if they are out of scope or too niche to maintain.
+
+## Merging upstream changes
+
+For maintainers:
+
+```bash
+git remote add upstream https://github.com/nesdev-org/MesenCE.git
+```
+
+```bash
+git fetch upstream && git merge upstream/master
+```
+
+After a merge, look for new user-visible "Mesen" strings (UI text, window titles, messages) and change them to RetroStationX or to `AppInfo.Name`.

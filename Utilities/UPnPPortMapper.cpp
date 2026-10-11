@@ -38,7 +38,7 @@ bool UPnPPortMapper::AddNATPortMapping(uint16_t internalPort, uint16_t externalP
 				//std::cout << "Attempting to automatically forward port via UPnP..." << std::endl;
 
 				vector<wstring> localIPs = GetLocalIPs();
-				BSTR desc = SysAllocString(L"Mesen NetPlay");
+				BSTR desc = SysAllocString(L"RetroStationX NetPlay");
 				spm = nullptr;
 
 				for(size_t i = 0, len = localIPs.size(); i < len; i++) {

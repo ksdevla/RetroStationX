@@ -100,7 +100,7 @@ namespace Mesen.ViewModels
 			}
 
 			if(OperatingSystem.IsWindows()) {
-				string linkPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "Mesen.url");
+				string linkPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), AppInfo.Name + ".url");
 				FileHelper.WriteAllText(linkPath,
 					"[InternetShortcut]" + Environment.NewLine +
 					"URL=file:///" + Program.ExePath + Environment.NewLine +
@@ -108,7 +108,7 @@ namespace Mesen.ViewModels
 					"IconFile=" + Program.ExePath.Replace('\\', '/') + Environment.NewLine
 				);
 			} else {
-				string shortcutFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "mesen.desktop");
+				string shortcutFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), AppInfo.LinuxDesktopFileName);
 				FileAssociationHelper.CreateLinuxShortcutFile(shortcutFile);
 				Process.Start("chmod", "744 " + shortcutFile);
 			}

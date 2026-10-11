@@ -30,7 +30,7 @@ namespace Mesen.Config
 					"\t\t<glob-deleteall/>" + Environment.NewLine +
 					"\t\t<glob pattern=\"*." + extension + "\"/>" + Environment.NewLine +
 					"\t\t<comment>" + description + "</comment>" + Environment.NewLine +
-					"\t\t<icon>MesenIcon</icon>" + Environment.NewLine +
+					"\t\t<icon>" + AppInfo.LinuxIconName + "</icon>" + Environment.NewLine +
 					"\t</mime-type>" + Environment.NewLine +
 					"</mime-info>" + Environment.NewLine);
 
@@ -62,47 +62,47 @@ namespace Mesen.Config
 			}
 
 			List<string> mimeTypes = new List<string>();
-			CreateMimeType("x-mesen-sfc", "sfc", "SNES Rom", mimeTypes, cfg.AssociateSnesRomFiles);
-			CreateMimeType("x-mesen-smc", "smc", "SNES Rom", mimeTypes, cfg.AssociateSnesRomFiles);
-			CreateMimeType("x-mesen-swc", "swc", "SNES Rom", mimeTypes, cfg.AssociateSnesRomFiles);
-			CreateMimeType("x-mesen-fig", "fig", "SNES Rom", mimeTypes, cfg.AssociateSnesRomFiles);
-			CreateMimeType("x-mesen-bs", "bs", "BS-X Memory Pack", mimeTypes, cfg.AssociateSnesRomFiles);
-			CreateMimeType("x-mesen-spc", "spc", "SPC Sound File", mimeTypes, cfg.AssociateSnesMusicFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "sfc", "sfc", "SNES Rom", mimeTypes, cfg.AssociateSnesRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "smc", "smc", "SNES Rom", mimeTypes, cfg.AssociateSnesRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "swc", "swc", "SNES Rom", mimeTypes, cfg.AssociateSnesRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "fig", "fig", "SNES Rom", mimeTypes, cfg.AssociateSnesRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "bs", "bs", "BS-X Memory Pack", mimeTypes, cfg.AssociateSnesRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "spc", "spc", "SPC Sound File", mimeTypes, cfg.AssociateSnesMusicFiles);
 
-			CreateMimeType("x-mesen-nes", "nes", "NES ROM", mimeTypes, cfg.AssociateNesRomFiles);
-			CreateMimeType("x-mesen-fds", "fds", "FDS ROM", mimeTypes, cfg.AssociateNesRomFiles);
-			CreateMimeType("x-mesen-qd", "qd", "FDS ROM (QD format)", mimeTypes, cfg.AssociateNesRomFiles);
-			CreateMimeType("x-mesen-studybox", "studybox", "Studybox ROM (Famicom)", mimeTypes, cfg.AssociateNesRomFiles);
-			CreateMimeType("x-mesen-unif", "unf", "NES ROM", mimeTypes, cfg.AssociateNesRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "nes", "nes", "NES ROM", mimeTypes, cfg.AssociateNesRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "fds", "fds", "FDS ROM", mimeTypes, cfg.AssociateNesRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "qd", "qd", "FDS ROM (QD format)", mimeTypes, cfg.AssociateNesRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "studybox", "studybox", "Studybox ROM (Famicom)", mimeTypes, cfg.AssociateNesRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "unif", "unf", "NES ROM", mimeTypes, cfg.AssociateNesRomFiles);
 
-			CreateMimeType("x-mesen-nsf", "nsf", "Nintendo Sound File", mimeTypes, cfg.AssociateNesMusicFiles);
-			CreateMimeType("x-mesen-nsfe", "nsfe", "Nintendo Sound File (extended)", mimeTypes, cfg.AssociateNesMusicFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "nsf", "nsf", "Nintendo Sound File", mimeTypes, cfg.AssociateNesMusicFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "nsfe", "nsfe", "Nintendo Sound File (extended)", mimeTypes, cfg.AssociateNesMusicFiles);
 
-			CreateMimeType("x-mesen-gb", "gb", "Game Boy ROM", mimeTypes, cfg.AssociateGbRomFiles);
-			CreateMimeType("x-mesen-gbx", "gbx", "Game Boy ROM", mimeTypes, cfg.AssociateGbRomFiles);
-			CreateMimeType("x-mesen-gbc", "gbc", "Game Boy Color ROM", mimeTypes, cfg.AssociateGbRomFiles);
-			CreateMimeType("x-mesen-gbs", "gbs", "Game Boy Sound File", mimeTypes, cfg.AssociateGbMusicFiles);
-			CreateMimeType("x-mesen-gba", "gba", "Game Boy Advance ROM", mimeTypes, cfg.AssociateGbaRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "gb", "gb", "Game Boy ROM", mimeTypes, cfg.AssociateGbRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "gbx", "gbx", "Game Boy ROM", mimeTypes, cfg.AssociateGbRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "gbc", "gbc", "Game Boy Color ROM", mimeTypes, cfg.AssociateGbRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "gbs", "gbs", "Game Boy Sound File", mimeTypes, cfg.AssociateGbMusicFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "gba", "gba", "Game Boy Advance ROM", mimeTypes, cfg.AssociateGbaRomFiles);
 
-			CreateMimeType("x-mesen-pce", "pce", "PC Engine ROM", mimeTypes, cfg.AssociatePceRomFiles);
-			CreateMimeType("x-mesen-sgx", "sgx", "PC Engine SuperGrafx ROM", mimeTypes, cfg.AssociatePceRomFiles);
-			CreateMimeType("x-mesen-hes", "hes", "PC Engine Sound File", mimeTypes, cfg.AssociatePceMusicFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "pce", "pce", "PC Engine ROM", mimeTypes, cfg.AssociatePceRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "sgx", "sgx", "PC Engine SuperGrafx ROM", mimeTypes, cfg.AssociatePceRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "hes", "hes", "PC Engine Sound File", mimeTypes, cfg.AssociatePceMusicFiles);
 
-			CreateMimeType("x-mesen-sms", "sms", "Master System ROM", mimeTypes, cfg.AssociateSmsRomFiles);
-			CreateMimeType("x-mesen-gg", "gg", "Game Gear ROM", mimeTypes, cfg.AssociateGameGearRomFiles);
-			CreateMimeType("x-mesen-sg", "sg", "SG-1000 ROM", mimeTypes, cfg.AssociateSgRomFiles);
-			CreateMimeType("x-mesen-col", "col", "ColecoVision ROM", mimeTypes, cfg.AssociateCvRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "sms", "sms", "Master System ROM", mimeTypes, cfg.AssociateSmsRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "gg", "gg", "Game Gear ROM", mimeTypes, cfg.AssociateGameGearRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "sg", "sg", "SG-1000 ROM", mimeTypes, cfg.AssociateSgRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "col", "col", "ColecoVision ROM", mimeTypes, cfg.AssociateCvRomFiles);
 
-			CreateMimeType("x-mesen-ws", "ws", "WonderSwan ROM", mimeTypes, cfg.AssociateWsRomFiles);
-			CreateMimeType("x-mesen-wsc", "wsc", "WonderSwan Color ROM", mimeTypes, cfg.AssociateWsRomFiles);
-			CreateMimeType("x-mesen-pc2", "pc2", "Pocket Challenge V2 ROM", mimeTypes, cfg.AssociateWsRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "ws", "ws", "WonderSwan ROM", mimeTypes, cfg.AssociateWsRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "wsc", "wsc", "WonderSwan Color ROM", mimeTypes, cfg.AssociateWsRomFiles);
+			CreateMimeType(AppInfo.LinuxMimeTypePrefix + "pc2", "pc2", "Pocket Challenge V2 ROM", mimeTypes, cfg.AssociateWsRomFiles);
 
 			//Icon used for shortcuts
-			using(FileStream file = File.Open(Path.Combine(iconFolder, "MesenIcon.png"), FileMode.OpenOrCreate, FileAccess.Write)) {
-				AssetLoader.Open(new Uri("avares://Mesen/Assets/MesenIcon.png")).CopyTo(file);
+			using(FileStream file = File.Open(Path.Combine(iconFolder, AppInfo.LinuxIconName + ".png"), FileMode.OpenOrCreate, FileAccess.Write)) {
+				AssetLoader.Open(new Uri("avares://" + AppInfo.Name + "/Assets/AppIcon.png")).CopyTo(file);
 			}
 
-			string desktopFile = Path.Combine(desktopFolder, "mesen.desktop");
+			string desktopFile = Path.Combine(desktopFolder, AppInfo.LinuxDesktopFileName);
 			if(!File.Exists(desktopFile)) {
 				CreateLinuxShortcutFile(desktopFile, mimeTypes);
 			} else {
@@ -152,14 +152,14 @@ namespace Mesen.Config
 			string content =
 				"[Desktop Entry]" + Environment.NewLine +
 				"Type=Application" + Environment.NewLine +
-				"Name=Mesen" + Environment.NewLine +
-				"Comment=Emulator" + Environment.NewLine +
+				"Name=" + AppInfo.Name + Environment.NewLine +
+				"Comment=" + AppInfo.Description + Environment.NewLine +
 				"Keywords=game;emulator;emu" + Environment.NewLine +
 				"Categories=GNOME;GTK;Game;Emulator;" + Environment.NewLine +
 				"Exec=" + mainModule.FileName + " %f" + Environment.NewLine +
 				"NoDisplay=false" + Environment.NewLine +
 				"StartupNotify=true" + Environment.NewLine +
-				"Icon=MesenIcon" + Environment.NewLine;
+				"Icon=" + AppInfo.LinuxIconName + Environment.NewLine;
 
 			if(mimeTypes != null) {
 				content += "MimeType=" + string.Join(";", mimeTypes.Select(type => "application/" + type)) + Environment.NewLine;
@@ -234,12 +234,12 @@ namespace Mesen.Config
 			if(associate) {
 				ProcessModule? mainModule = Process.GetCurrentProcess().MainModule;
 				if(mainModule != null) {
-					Registry.SetValue(@"HKEY_CURRENT_USER\Software\Classes\Mesen\shell\open\command", null, mainModule.FileName + " \"%1\"");
-					Registry.SetValue(key, null, "Mesen");
+					Registry.SetValue(@"HKEY_CURRENT_USER\Software\Classes\" + AppInfo.FileAssociationProgId + @"\shell\open\command", null, mainModule.FileName + " \"%1\"");
+					Registry.SetValue(key, null, AppInfo.FileAssociationProgId);
 				}
 			} else {
 				object? regKey = Registry.GetValue(key, null, "");
-				if(regKey != null && regKey.Equals("Mesen")) {
+				if(regKey != null && regKey.Equals(AppInfo.FileAssociationProgId)) {
 					Registry.SetValue(key, null, "");
 				}
 			}

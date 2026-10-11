@@ -1186,7 +1186,7 @@ namespace Mesen.ViewModels
 				new MainMenuAction() {
 					ActionType = ActionType.OnlineHelp,
 					IsVisible = () => false,
-					OnClick = () => ApplicationHelper.OpenBrowser("https://www.mesen.ca/documentation/")
+					OnClick = () => ApplicationHelper.OpenBrowser(AppInfo.RepoUrl)
 				},
 				new MainMenuAction() {
 					ActionType = ActionType.CommandLineHelp,
@@ -1199,7 +1199,7 @@ namespace Mesen.ViewModels
 				new MainMenuAction() {
 					ActionType = ActionType.ReportBug,
 					IsVisible = () => false,
-					OnClick = () => ApplicationHelper.OpenBrowser("https://www.mesen.ca/reportbug/")
+					OnClick = () => ApplicationHelper.OpenBrowser(AppInfo.IssuesUrl)
 				},
 				new ContextMenuSeparator(),
 				new MainMenuAction() {
@@ -1213,6 +1213,13 @@ namespace Mesen.ViewModels
 
 		public void CheckForUpdate(Window mainWindow, bool silent)
 		{
+			if(!UpdatePromptViewModel.IsUpdateFeedConfigured) {
+				if(!silent) {
+					MesenMsgBox.Show(null, "AutoUpdateNotSupported", MessageBoxButtons.OK, MessageBoxIcon.Info);
+				}
+				return;
+			}
+
 			Task.Run(async () => {
 				UpdatePromptViewModel? updateInfo = await UpdatePromptViewModel.GetUpdateInformation(silent);
 				if(updateInfo == null) {

@@ -111,7 +111,7 @@ void GameServerConnection::ProcessHandshakeResponse(HandShakeMessage* message)
 			SendForceDisconnectMessage("The password you provided did not match - you have been disconnected.");
 		}
 	} else {
-		SendForceDisconnectMessage("Server is using a different version of Mesen (" + _emu->GetSettings()->GetVersionString() + ") - you have been disconnected.");
+		SendForceDisconnectMessage("Server is using a different version of RetroStationX (" + _emu->GetSettings()->GetVersionString() + ") - you have been disconnected.");
 		MessageManager::DisplayMessage("NetPlay", +"NetplayVersionMismatch");
 	}
 }

@@ -226,7 +226,7 @@ pgo:
 	./buildPGO.sh
 
 run:
-	$(OUTFOLDER)/$(MESENPLATFORM)/publish/Mesen
+	$(OUTFOLDER)/$(MESENPLATFORM)/publish/RetroStationX
 
 clean:
 	rm -r -f $(COREOBJ)
