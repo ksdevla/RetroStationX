@@ -35,7 +35,7 @@ namespace Mesen.ViewModels
 		{
 			LatestVersion = updateInfo.LatestVersion;
 			Changelog = updateInfo.ReleaseNotes;
-			InstalledVersion = EmuApi.GetMesenVersion();
+			InstalledVersion = AppInfo.Version;
 
 			_fileInfo = file;
 		}
@@ -104,7 +104,7 @@ namespace Mesen.ViewModels
 				return false;
 			}
 
-			string downloadPath = Path.Combine(ConfigManager.BackupFolder, AppInfo.Name + "." + LatestVersion.ToString(3));
+			string downloadPath = Path.Combine(ConfigManager.BackupFolder, AppInfo.Name + "." + LatestVersion.ToString());
 
 			using(var client = new HttpClient()) {
 				HttpResponseMessage response = await client.GetAsync(_fileInfo.DownloadUrl, HttpCompletionOption.ResponseHeadersRead);

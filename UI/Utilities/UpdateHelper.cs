@@ -22,10 +22,10 @@ namespace Mesen.Utilities
 		public static bool LaunchUpdate(string srcFile)
 		{
 			string destFile = Program.ExePath;
-			Version installedVersion = EmuApi.GetMesenVersion();
+			Version installedVersion = AppInfo.Version;
 			string? hash = GetCommitHash();
 			string shortHash = hash != null ? "." + hash.Substring(0, 7) : "";
-			string backupFilePath = Path.Combine(ConfigManager.BackupFolder, AppInfo.Name + "." + installedVersion.ToString(3) + shortHash);
+			string backupFilePath = Path.Combine(ConfigManager.BackupFolder, AppInfo.Name + "." + installedVersion.ToString() + shortHash);
 			if(OperatingSystem.IsWindows()) {
 				backupFilePath += ".exe";
 			}

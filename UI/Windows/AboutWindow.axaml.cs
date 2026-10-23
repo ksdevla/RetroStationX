@@ -26,7 +26,7 @@ namespace Mesen.Windows
 
 		public AboutWindow()
 		{
-			Version = EmuApi.GetMesenVersion().ToString();
+			Version = AppInfo.Version.ToString();
 			BuildDate = EmuApi.GetMesenBuildDate();
 			RuntimeVersion = ".NET " + Environment.Version;
 			RuntimeVersion += RuntimeFeature.IsDynamicCodeSupported ? " (JIT)" : " (AOT)";

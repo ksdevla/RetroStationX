@@ -8,8 +8,9 @@
     <AssemblyName>RetroStationX</AssemblyName>
     <RootNamespace>Mesen</RootNamespace>
     <StartupObject>Mesen.Program</StartupObject>
-    <Version>2.2.1</Version>
-    <FileVersion>2.2.1</FileVersion>
+    <!-- RetroStationX version: <MesenCE version>.<fork revision> (the core keeps the MesenCE version for save state/movie/netplay compatibility) -->
+    <Version>2.2.1.1</Version>
+    <FileVersion>2.2.1.1</FileVersion>
     <Product>RetroStationX</Product>
     <Description>RetroStationX - multi-system emulator (fork of MesenCE)</Description>
     <Copyright>(C) 2014-2026 Sour, 2026 MesenCE contributors, 2026 ksdevla</Copyright>
@@ -54,8 +55,8 @@
 		<CFBundleName>RetroStationX</CFBundleName> <!-- Also defines .app file name -->
 		<CFBundleDisplayName>RetroStationX</CFBundleDisplayName>
 		<CFBundleIdentifier>io.github.ksdevla.retrostationx</CFBundleIdentifier>
-		<CFBundleVersion>1.0.0</CFBundleVersion>
-		<CFBundleShortVersionString>1.0</CFBundleShortVersionString>
+		<CFBundleVersion>$(Version)</CFBundleVersion>
+		<CFBundleShortVersionString>$(Version)</CFBundleShortVersionString>
 		<CFBundlePackageType>APPL</CFBundlePackageType>
 		<CFBundleSignature>????</CFBundleSignature>
 		<CFBundleExecutable>RetroStationX</CFBundleExecutable>

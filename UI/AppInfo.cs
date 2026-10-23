@@ -11,6 +11,10 @@
 		public const string Description = "Multi-system emulator";
 		public const string CopyrightHolder = "ksdevla";
 
+		//RetroStationX's own version (set by <Version> in UI.csproj), e.g 2.2.1.1 = based on MesenCE 2.2.1, fork revision 1
+		//The core keeps the upstream version (EmuApi.GetMesenVersion) - save states, movies and netplay use it for compatibility checks
+		public static readonly System.Version Version = typeof(AppInfo).Assembly.GetName().Version ?? new System.Version(0, 0, 0, 0);
+
 		public const string RepoUrl = "https://github.com/ksdevla/RetroStationX";
 		public const string IssuesUrl = RepoUrl + "/issues";
 		public const string CommitUrl = RepoUrl + "/commit/";
