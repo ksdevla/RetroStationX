@@ -7,7 +7,7 @@ RetroStationX has two parts:
 
 ## Windows
 
-Requirements: Visual Studio 2022 or 2026 with the **Desktop development with C++** and **.NET desktop development** workloads, plus the [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0).
+Requirements: Visual Studio 2026 (C++ toolset v145) with the **Desktop development with C++** and **.NET desktop development** workloads, plus the [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0).
 
 1. Open `Mesen.sln` in Visual Studio.
 2. Select the `Release` / `x64` configuration.
