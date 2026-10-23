@@ -190,3 +190,7 @@ packages/*
 
 TestHelper/*
 UI/Dependencies.zip
+# librashader binaries (downloaded by CI or manually, not part of the source)
+UI/Dependencies/librashader.dll
+UI/Dependencies/librashader.so
+UI/Dependencies/librashader.dylib

@@ -20,7 +20,7 @@ namespace RewindTest
 	//Feeds controller 1 with a different, deterministic button combination on every frame
 	//While rewinding, the rewind manager must supply the recorded inputs - if it doesn't, an
 	//invalid input is fed instead so that any missing/misaligned input makes the test fail
-	class InputProvider : public IInputProvider
+	class InputProvider final : public IInputProvider
 	{
 		Emulator* _emu;
 
@@ -47,7 +47,7 @@ namespace RewindTest
 	};
 
 	//Captures the console's RAM the first time the target frame is reached outside of rewind
-	class RamCapture : public INotificationListener
+	class RamCapture final : public INotificationListener
 	{
 		Emulator* _emu;
 		uint32_t _targetFrame;
