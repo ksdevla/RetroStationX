@@ -57,6 +57,8 @@ namespace Mesen.Config
 
 		[ObservableProperty] public partial ScreenRotation ScreenRotation { get; set; } = ScreenRotation.None;
 		[ObservableProperty] public partial bool DisableHighPrecisionFramePacing { get; set; } = false;
+		[ObservableProperty] public partial bool EnableFrameGeneration { get; set; } = false;
+		[ObservableProperty] public partial FrameGenerationRate FrameGenerationTarget { get; set; } = FrameGenerationRate.MonitorRefreshRate;
 
 		public VideoConfig()
 		{
@@ -127,7 +129,11 @@ namespace Mesen.Config
 				ExclusiveFullscreenRefreshRatePal = this.ExclusiveFullscreenRefreshRatePal,
 
 				ScreenRotation = (uint)ScreenRotation,
-				DisableHighPrecisionFramePacing = this.DisableHighPrecisionFramePacing
+				DisableHighPrecisionFramePacing = this.DisableHighPrecisionFramePacing,
+
+				//Frame generation relies on the Direct3D renderer waiting for vsync (Windows only)
+				EnableFrameGeneration = this.EnableFrameGeneration && OperatingSystem.IsWindows() && !this.UseSoftwareRenderer,
+				FrameGenerationTarget = (UInt32)this.FrameGenerationTarget
 			});
 		}
 
@@ -197,6 +203,9 @@ namespace Mesen.Config
 		public UInt32 ScreenRotation;
 
 		[MarshalAs(UnmanagedType.I1)] public bool DisableHighPrecisionFramePacing;
+
+		[MarshalAs(UnmanagedType.I1)] public bool EnableFrameGeneration;
+		public UInt32 FrameGenerationTarget;
 	}
 
 	public enum VideoFilterType
@@ -236,6 +245,18 @@ namespace Mesen.Config
 		Standard = 4,
 		Widescreen = 5,
 		Custom = 6
+	}
+
+	public enum FrameGenerationRate
+	{
+		MonitorRefreshRate = 0,
+		_90Fps = 90,
+		_120Fps = 120,
+		_144Fps = 144,
+		_165Fps = 165,
+		_180Fps = 180,
+		_240Fps = 240,
+		_360Fps = 360
 	}
 
 	public enum ScreenRotation

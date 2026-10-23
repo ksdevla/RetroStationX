@@ -912,7 +912,13 @@ void Renderer::Render(RenderSurfaceInfo& emuHud, RenderSurfaceInfo& scriptHud)
 	DrawHud(_emuHud, emuHud);
 
 	// Present the information rendered to the back buffer to the front buffer (the screen)
-	HRESULT hr = _pSwapChain->Present((cfg.VerticalSync && !_allowTearing) ? 1 : 0, _allowTearing ? DXGI_PRESENT_ALLOW_TEARING : 0);
+	//Frame generation at the monitor's refresh rate renders one frame per refresh, so it always waits for vsync (without tearing)
+	//With a fixed target frame rate, the video renderer paces the frames itself, so don't wait for vsync
+	bool syncToRefresh = cfg.EnableFrameGeneration && cfg.FrameGenerationTarget == 0;
+	bool fixedFrameRate = cfg.EnableFrameGeneration && cfg.FrameGenerationTarget > 0;
+	UINT syncInterval = (syncToRefresh || (!fixedFrameRate && cfg.VerticalSync && !_allowTearing)) ? 1 : 0;
+	UINT presentFlags = (_allowTearing && !syncToRefresh) ? DXGI_PRESENT_ALLOW_TEARING : 0;
+	HRESULT hr = _pSwapChain->Present(syncInterval, presentFlags);
 	if(FAILED(hr)) {
 		LogError("SwapChain::Present() failed.", hr);
 		if(hr == DXGI_ERROR_DEVICE_REMOVED) {

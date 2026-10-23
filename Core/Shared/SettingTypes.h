@@ -120,6 +120,9 @@ struct VideoConfig
 
 	uint32_t ScreenRotation = 0;
 	bool DisableHighPrecisionFramePacing = false;
+
+	bool EnableFrameGeneration = false;
+	uint32_t FrameGenerationTarget = 0; //Frames per second to generate, 0 = monitor refresh rate
 };
 
 struct ShaderParam

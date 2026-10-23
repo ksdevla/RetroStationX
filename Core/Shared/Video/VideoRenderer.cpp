@@ -7,6 +7,8 @@
 #include "Shared/Video/DebugHud.h"
 #include "Shared/Video/SystemHud.h"
 #include "Shared/Video/DebugStats.h"
+#include "Shared/Video/FrameInterpolator.h"
+#include "Shared/RewindManager.h"
 #include "Shared/InputHud.h"
 #include "Shared/MessageManager.h"
 #include "Utilities/Video/IVideoRecorder.h"
@@ -21,6 +23,18 @@ VideoRenderer::VideoRenderer(Emulator* emu)
 	_rendererHud.reset(new DebugHud());
 	_systemHud.reset(new SystemHud(_emu));
 	_inputHud.reset(new InputHud(emu, _rendererHud.get()));
+	_frameInterpolator.reset(new FrameInterpolator());
+}
+
+bool VideoRenderer::IsFrameGenerationEnabled()
+{
+	return _emu->GetSettings()->GetVideoConfig().EnableFrameGeneration;
+}
+
+bool VideoRenderer::IsFrameGenerationActive()
+{
+	//Only generate frames while the game runs at normal speed (not when paused, rewinding, fast forwarding, etc.)
+	return IsFrameGenerationEnabled() && _emu->IsRunning() && !_emu->IsPaused() && !_emu->GetRewindManager()->IsRewinding() && _emu->GetSettings()->GetEmulationSpeed() == 100;
 }
 
 VideoRenderer::~VideoRenderer()
@@ -68,6 +82,18 @@ void VideoRenderer::StopThread()
 	}
 }
 
+void VideoRenderer::WaitUntil(Timer& clock, double targetTime)
+{
+	//Sleep for most of the wait, then spin for the last ~1.5ms (sleep() isn't precise enough for 144+ fps pacing)
+	double remaining = targetTime - clock.GetElapsedMS();
+	if(remaining > 2) {
+		std::this_thread::sleep_for(std::chrono::microseconds((int)((remaining - 1.5) * 1000)));
+	}
+	while(clock.GetElapsedMS() < targetTime && !_stopFlag.load()) {
+		std::this_thread::yield();
+	}
+}
+
 void VideoRenderer::RenderThread()
 {
 	if(_renderer) {
@@ -75,11 +101,29 @@ void VideoRenderer::RenderThread()
 	}
 
 	Timer lastFrameTimer;
+	Timer frameGenerationTimer;
+	Timer frameGenerationClock;
+	double nextGeneratedFrameTime = 0;
 	bool needClearHud = false;
 	while(!_stopFlag.load()) {
-		//Wait until a frame is ready, or until 32ms have passed (to allow HUD to update at ~30fps when paused)
-		bool forceRender = !_waitForRender.Wait(32);
+		bool frameGeneration = IsFrameGenerationActive();
+		bool forceRender;
+		if(frameGeneration) {
+			//Render on every screen refresh (Present() waits for vsync), showing a generated frame each time
+			forceRender = true;
+		} else {
+			//Wait until a frame is ready, or until 32ms have passed (to allow HUD to update at ~30fps when paused)
+			forceRender = !_waitForRender.Wait(32);
+		}
+
 		if(_renderer) {
+			if(frameGeneration) {
+				RenderedFrame generatedFrame;
+				if(_frameInterpolator->GetFrame(generatedFrame)) {
+					_renderer->UpdateFrame(generatedFrame);
+				}
+			}
+
 			FrameInfo size = _emu->GetVideoDecoder()->GetBaseFrameInfo(true);
 			_scriptHudSurface.UpdateSize(size.Width * _scriptHudScale, size.Height * _scriptHudScale);
 
@@ -123,6 +167,28 @@ void VideoRenderer::RenderThread()
 			if(forceRender || _needRedraw || _emuHudSurface.IsDirty || _scriptHudSurface.IsDirty) {
 				_needRedraw = false;
 				_renderer->Render(_emuHudSurface, _scriptHudSurface);
+			}
+		}
+
+		if(frameGeneration) {
+			uint32_t targetFps = _emu->GetSettings()->GetVideoConfig().FrameGenerationTarget;
+			if(targetFps > 0) {
+				//Fixed frame rate: Present() doesn't wait for vsync, wait until the next frame's time instead
+				double frameDuration = 1000.0 / targetFps;
+				double now = frameGenerationClock.GetElapsedMS();
+				nextGeneratedFrameTime += frameDuration;
+				if(nextGeneratedFrameTime < now || nextGeneratedFrameTime > now + frameDuration * 2) {
+					//Fell behind (or the target changed), restart the schedule from now
+					nextGeneratedFrameTime = now + frameDuration;
+				}
+				WaitUntil(frameGenerationClock, nextGeneratedFrameTime);
+			} else {
+				//Present() normally blocks until the next refresh - if it doesn't (e.g minimized window), cap the loop at ~500 fps
+				double elapsed = frameGenerationTimer.GetElapsedMS();
+				if(elapsed < 2) {
+					std::this_thread::sleep_for(std::chrono::microseconds((int)((2 - elapsed) * 1000)));
+				}
+				frameGenerationTimer.Reset();
 			}
 		}
 	}
@@ -197,8 +263,15 @@ void VideoRenderer::UpdateFrame(RenderedFrame& frame)
 		_lastFrame = frame;
 	}
 
+	if(IsFrameGenerationEnabled()) {
+		_frameInterpolator->AddFrame(frame);
+	}
+
 	if(_renderer) {
-		_renderer->UpdateFrame(frame);
+		if(!IsFrameGenerationActive()) {
+			//When frame generation is active, the render thread sends the (generated) frames to the renderer instead
+			_renderer->UpdateFrame(frame);
+		}
 		_needRedraw = true;
 		_waitForRender.Signal();
 	}

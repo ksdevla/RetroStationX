@@ -67,6 +67,19 @@
 						</StackPanel>
 
 						<CheckBox Content="{l:Translate chkIntegerFpsMode}" IsChecked="{Binding Config.IntegerFpsMode}" />
+						<StackPanel Orientation="Horizontal" IsVisible="{Binding IsWindows}">
+							<CheckBox
+								Content="{l:Translate chkEnableFrameGeneration}"
+								IsChecked="{Binding Config.EnableFrameGeneration}"
+								IsEnabled="{Binding !Config.UseSoftwareRenderer}"
+							/>
+							<c:HelpTooltip Text="{l:Translate chkEnableFrameGenerationHint}" />
+						</StackPanel>
+						<StackPanel Orientation="Horizontal" Margin="20 0 0 5" IsVisible="{Binding IsWindows}" IsEnabled="{Binding Config.EnableFrameGeneration}">
+							<TextBlock Text="{l:Translate lblFrameGenerationTarget}" VerticalAlignment="Center" Margin="0 0 5 0" />
+							<c:EnumComboBox SelectedItem="{Binding Config.FrameGenerationTarget}" />
+							<c:HelpTooltip Text="{l:Translate lblFrameGenerationTargetHint}" />
+						</StackPanel>
 						<CheckBox
 							Content="{l:Translate chkVerticalSync}"
 							IsVisible="{Binding !IsMacOs}"

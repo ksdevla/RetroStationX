@@ -16,6 +16,8 @@ class InputHud;
 
 class IVideoRecorder;
 enum class VideoCodec;
+class FrameInterpolator;
+class Timer;
 
 struct RecordAviOptions
 {
@@ -56,6 +58,11 @@ private:
 
 	RenderedFrame _lastFrame;
 	SimpleLock _frameLock;
+
+	unique_ptr<FrameInterpolator> _frameInterpolator;
+	bool IsFrameGenerationEnabled();
+	bool IsFrameGenerationActive();
+	void WaitUntil(Timer& clock, double targetTime);
 
 	safe_ptr<IVideoRecorder> _recorder;
 

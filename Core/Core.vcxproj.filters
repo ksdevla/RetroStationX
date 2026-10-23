@@ -1111,6 +1111,12 @@
     <ClInclude Include="Shared\Video\VideoRenderer.h">
       <Filter>Shared\Video</Filter>
     </ClInclude>
+    <ClCompile Include="Shared\Video\FrameInterpolator.cpp">
+      <Filter>Shared\Video</Filter>
+    </ClCompile>
+    <ClInclude Include="Shared\Video\FrameInterpolator.h">
+      <Filter>Shared\Video</Filter>
+    </ClInclude>
     <ClInclude Include="SNES\Coprocessors\BaseCoprocessor.h">
       <Filter>SNES\Coprocessors</Filter>
     </ClInclude>

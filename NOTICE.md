@@ -20,6 +20,7 @@ RetroStationX was forked from MesenCE commit `4b8a196` in October 2026. Changes 
 - **2026-10:** Rewind saves an uncompressed snapshot every frame (instead of a compressed one every 30 frames). The default memory limit is now 4 GB. Fixed rewind history corruption when resuming exactly on a snapshot, History Viewer input for ports other than player 1, and "Rewind N seconds" on non-60 FPS systems.
 - **2026-10:** Changed the default Xbox controller layout for 2-button controllers (A = A, B = X, Turbo A = B, Turbo B = Y), with movement on the left analog stick.
 - **2026-10:** Fixed published builds failing to start ("missing dependencies") after a normal build, and removed debug symbol files from published builds.
+- **2026-10:** Added frame generation (Windows): in-between frames generated with block-based motion estimation, shown at the monitor's refresh rate or a chosen target frame rate.
 
 For the full list of changes, see the git history after commit `4b8a196`.
 

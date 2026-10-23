@@ -137,6 +137,10 @@
 			<Control ID="tpgGeneral">General</Control>
 			<Control ID="chkIntegerFpsMode">Enable integer FPS mode (e.g: run at 60 fps instead of 60.1)</Control>
 			<Control ID="chkVerticalSync">Enable vertical sync</Control>
+			<Control ID="chkEnableFrameGeneration">Enable frame generation (for 120 Hz+ monitors)</Control>
+			<Control ID="chkEnableFrameGenerationHint">Generates in-between frames so that games running at ~60 fps look smoother on high refresh rate monitors (e.g 120 Hz or 144 Hz). Scrolling and moving objects are interpolated; pixels that can't be matched between frames (flickering sprites, scene changes) are shown as-is, without blurring.&#13;&#13;This adds about one frame of input lag - using Run Ahead (Emulation settings) compensates for it.&#13;&#13;Has no benefit on 60 Hz monitors. Disabled while paused, rewinding or fast-forwarding. In exclusive fullscreen mode, set the refresh rate to your monitor's maximum.</Control>
+			<Control ID="lblFrameGenerationTarget">Target frame rate:</Control>
+			<Control ID="lblFrameGenerationTargetHint">How many frames per second to display. "Monitor refresh rate" shows one frame per screen refresh (smoothest, recommended).&#13;&#13;A fixed rate is useful with variable refresh rate (G-Sync/FreeSync), or to lower the CPU/GPU usage. Without VRR, a rate that doesn't match your monitor's refresh rate can look uneven, and rates above it can't be displayed.</Control>
 			<Control ID="lblDisplayRatio">Aspect Ratio:</Control>
 			<Control ID="lblCustomRatio">Custom Ratio: </Control>
 			<Control ID="chkBilinearInterpolation">Use bilinear interpolation when scaling</Control>
@@ -2473,6 +2477,16 @@ E
 			<Value ID="_1024x768">1024x768</Value>
 			<Value ID="_800x600">800x600</Value>
 			<Value ID="_640x480">640x480</Value>
+		</Enum>
+		<Enum ID="FrameGenerationRate">
+			<Value ID="MonitorRefreshRate">Monitor refresh rate</Value>
+			<Value ID="_90Fps">90 fps</Value>
+			<Value ID="_120Fps">120 fps</Value>
+			<Value ID="_144Fps">144 fps</Value>
+			<Value ID="_165Fps">165 fps</Value>
+			<Value ID="_180Fps">180 fps</Value>
+			<Value ID="_240Fps">240 fps</Value>
+			<Value ID="_360Fps">360 fps</Value>
 		</Enum>
 		<Enum ID="ScreenRotation">
 			<Value ID="None">None</Value>

@@ -7,6 +7,7 @@
 #include "Core/Shared/BaseControlDevice.h"
 #include "Core/Shared/Interfaces/IInputProvider.h"
 #include "Core/Shared/Interfaces/INotificationListener.h"
+#include "Core/Shared/Video/FrameInterpolator.h"
 #include "Utilities/FolderUtilities.h"
 #include "Utilities/StringUtilities.h"
 #include "Utilities/HexUtilities.h"
@@ -459,6 +460,138 @@ extern "C"
 			}
 			log << "\n";
 			perf.End();
+		}
+
+		log << (allPassed ? "PASS" : "FAIL") << "\n";
+		return allPassed;
+	}
+
+	//Checks the frame generation (FrameInterpolator) on synthetic pixel art frames with known motion:
+	//the generated in-between frame is compared with the expected frame, pixel by pixel
+	DllExport bool __stdcall RunFrameInterpolatorTest(const char* logFile)
+	{
+		ofstream log(logFile, ios::out | ios::trunc);
+		constexpr int w = 256;
+		constexpr int h = 240;
+		const uint32_t palette[6] = { 0xFF5C94FC, 0xFF00A800, 0xFFC84C0C, 0xFFFCBCB0, 0xFF000000, 0xFFF8F8F8 };
+
+		//Tiled pixel-art background (like a NES nametable), with some detail inside each tile
+		auto background = [&](int x, int y) -> uint32_t {
+			int tx = (x >> 3) & 0xFF;
+			int ty = (y >> 3) & 0xFF;
+			uint32_t hash = (uint32_t)(tx * 73856093) ^ (uint32_t)(ty * 19349663);
+			uint32_t color = palette[hash % 4];
+			if(((x + y) & 7) == 0 || ((x & 7) == 3 && (hash & 8))) {
+				color = palette[4];
+			}
+			return color;
+		};
+		auto sprite = [&](int sx, int sy) -> uint32_t {
+			return ((sx / 2 + sy / 2) & 1) ? palette[2] : palette[5];
+		};
+
+		struct Frame
+		{
+			vector<uint32_t> Pixels = vector<uint32_t>(256 * 240);
+			uint32_t& At(int x, int y) { return Pixels[y * 256 + x]; }
+		};
+
+		//scrollX: camera position, spriteX: sprite position (-1 = no sprite), hud: static status bar at the top
+		auto makeFrame = [&](double scrollX, int spriteX, bool hud) {
+			Frame f;
+			for(int y = 0; y < h; y++) {
+				for(int x = 0; x < w; x++) {
+					if(hud && y < 32) {
+						f.At(x, y) = ((x / 8 + y / 8) % 3 == 0) ? palette[5] : palette[4];
+					} else if(scrollX < 0) {
+						f.At(x, y) = palette[0]; //flat sky
+					} else {
+						f.At(x, y) = background(x + (int)scrollX, y);
+					}
+				}
+			}
+			if(spriteX >= 0) {
+				for(int y = 0; y < 16; y++) {
+					for(int x = 0; x < 16; x++) {
+						f.At(spriteX + x, 100 + y) = sprite(x, y);
+					}
+				}
+			}
+			return f;
+		};
+
+		bool allPassed = true;
+		auto check = [&](string name, Frame prev, Frame cur, double t, Frame expected, int marginX, double minMatchPercent) {
+			FrameInterpolator interpolator;
+			RenderedFrame prevFrame(prev.Pixels.data(), w, h);
+			RenderedFrame curFrame(cur.Pixels.data(), w, h);
+			interpolator.AddFrame(prevFrame);
+			interpolator.AddFrame(curFrame);
+
+			RenderedFrame output;
+			if(!interpolator.GenerateFrameForTest(t, output)) {
+				log << name << ": FAIL (no frame generated)\n";
+				allPassed = false;
+				return;
+			}
+
+			uint32_t* pixels = (uint32_t*)output.FrameBuffer;
+			int total = 0;
+			int matches = 0;
+			for(int y = 0; y < h; y++) {
+				for(int x = marginX; x < w - marginX; x++) {
+					total++;
+					if(pixels[y * w + x] == expected.At(x, y)) {
+						matches++;
+					}
+				}
+			}
+			double percent = 100.0 * matches / total;
+			bool pass = percent >= minMatchPercent;
+			allPassed &= pass;
+			log << name << ": " << (pass ? "PASS" : "FAIL") << " (" << StringUtilities::ToString(percent, 2) << "% of pixels match, need " << minMatchPercent << "%)\n";
+		};
+
+		//Camera scrolls 4 pixels per frame - halfway, the screen must be scrolled by 2 pixels
+		check("Scrolling, t=0.5", makeFrame(40, -1, false), makeFrame(44, -1, false), 0.5, makeFrame(42, -1, false), 8, 99);
+		check("Scrolling, t=0.25", makeFrame(40, -1, false), makeFrame(44, -1, false), 0.25, makeFrame(41, -1, false), 8, 99);
+		check("Scrolling, fast (8px/frame), t=0.5", makeFrame(40, -1, false), makeFrame(48, -1, false), 0.5, makeFrame(44, -1, false), 16, 98);
+
+		//Sprite moves 6 pixels to the right over a flat background
+		check("Sprite moving over flat background, t=0.5", makeFrame(-1, 100, false), makeFrame(-1, 106, false), 0.5, makeFrame(-1, 103, false), 0, 99.5);
+
+		//Scrolling playfield with a static status bar at the top
+		check("Scrolling with static status bar, t=0.5", makeFrame(40, -1, true), makeFrame(44, -1, true), 0.5, makeFrame(42, -1, true), 8, 98.5);
+
+		//Camera scrolls while a sprite moves the other way
+		check("Scrolling + moving sprite, t=0.5", makeFrame(40, 120, false), makeFrame(44, 112, false), 0.5, makeFrame(42, 116, false), 8, 98);
+
+		//No motion: the output must be identical
+		check("Static screen", makeFrame(40, 100, true), makeFrame(40, 100, true), 0.5, makeFrame(40, 100, true), 0, 100);
+
+		//Flickering sprite (visible on one frame only): no ghost, the nearest real frame is shown
+		check("Flickering sprite, t=0.25", makeFrame(-1, 100, false), makeFrame(-1, -1, false), 0.25, makeFrame(-1, 100, false), 0, 100);
+		check("Flickering sprite, t=0.75", makeFrame(-1, 100, false), makeFrame(-1, -1, false), 0.75, makeFrame(-1, -1, false), 0, 100);
+
+		//Speed: motion analysis (once per emulated frame) + generating 2.4 frames (144 Hz / 60 fps)
+		{
+			FrameInterpolator interpolator;
+			vector<Frame> frames;
+			for(int i = 0; i < 8; i++) {
+				frames.push_back(makeFrame(40 + i * 3, 60 + i * 5, true));
+			}
+			auto start = std::chrono::steady_clock::now();
+			int iterations = 300;
+			for(int i = 0; i < iterations; i++) {
+				RenderedFrame frame(frames[i % 8].Pixels.data(), w, h);
+				interpolator.AddFrame(frame);
+				RenderedFrame output;
+				interpolator.GenerateFrameForTest(0.33, output);
+				interpolator.GenerateFrameForTest(0.66, output);
+				interpolator.GenerateFrameForTest(0.99, output);
+			}
+			double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count() / iterations;
+			log << "Cost per emulated frame (analysis + 3 generated frames): " << StringUtilities::ToString(ms, 3) << " ms (" << StringUtilities::ToString(ms * 60 / 10, 1) << "% of one CPU core at 60 fps)\n";
 		}
 
 		log << (allPassed ? "PASS" : "FAIL") << "\n";
