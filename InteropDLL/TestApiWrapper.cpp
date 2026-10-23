@@ -2,11 +2,132 @@
 #include "Core/Shared/RecordedRomTest.h"
 #include "Core/Shared/Emulator.h"
 #include "Core/Shared/EmuSettings.h"
+#include "Core/Shared/RewindManager.h"
+#include "Core/Shared/NotificationManager.h"
+#include "Core/Shared/BaseControlDevice.h"
+#include "Core/Shared/Interfaces/IInputProvider.h"
+#include "Core/Shared/Interfaces/INotificationListener.h"
 #include "Utilities/FolderUtilities.h"
 #include "Utilities/StringUtilities.h"
+#include "Utilities/HexUtilities.h"
 
 extern unique_ptr<Emulator> _emu;
 shared_ptr<RecordedRomTest> _recordedRomTest;
+
+namespace RewindTest
+{
+	//Feeds controller 1 with a different, deterministic button combination on every frame
+	//While rewinding, the rewind manager must supply the recorded inputs - if it doesn't, an
+	//invalid input is fed instead so that any missing/misaligned input makes the test fail
+	class InputProvider : public IInputProvider
+	{
+		Emulator* _emu;
+
+	public:
+		InputProvider(Emulator* emu) : _emu(emu) {}
+
+		bool SetInput(BaseControlDevice* device) override
+		{
+			if(device->GetPort() != 0) {
+				return false;
+			}
+
+			uint32_t frame = _emu->GetFrameCount();
+			uint8_t buttons = (uint8_t)((frame * 2654435761u) >> 13);
+			if(_emu->GetRewindManager()->IsRewinding()) {
+				buttons = 0xA5;
+			}
+
+			for(int i = 0; i < 8; i++) {
+				device->SetBitValue(i, (buttons >> i) & 1);
+			}
+			return true;
+		}
+	};
+
+	//Captures the console's RAM the first time the target frame is reached outside of rewind
+	class RamCapture : public INotificationListener
+	{
+		Emulator* _emu;
+		uint32_t _targetFrame;
+
+	public:
+		vector<uint8_t> Ram;
+		std::atomic<bool> Captured = false;
+
+		RamCapture(Emulator* emu, uint32_t targetFrame) : _emu(emu), _targetFrame(targetFrame) {}
+
+		void ProcessNotification(ConsoleNotificationType type, void* parameter) override
+		{
+			if(type == ConsoleNotificationType::PpuFrameDone && !Captured && !_emu->GetRewindManager()->IsRewinding() && _emu->GetFrameCount() == _targetFrame) {
+				ConsoleMemoryInfo mem = _emu->GetMemory(MemoryType::NesInternalRam);
+				Ram = vector<uint8_t>((uint8_t*)mem.Memory, (uint8_t*)mem.Memory + mem.Size);
+				Captured = true;
+			}
+		}
+	};
+
+	struct Run
+	{
+		unique_ptr<Emulator> Emu;
+		unique_ptr<InputProvider> Input;
+		shared_ptr<RamCapture> Capture;
+
+		bool Start(const char* romFile, uint32_t rewindBufferSize, uint32_t targetFrame)
+		{
+			Emu.reset(new Emulator());
+			Emu->Initialize(false);
+			Emu->GetSettings()->GetNesConfig().Port1.Type = ControllerType::NesController;
+			Emu->GetSettings()->GetNesConfig().RamPowerOnState = RamState::AllZeros;
+			Emu->GetSettings()->GetPreferences().RewindBufferSize = rewindBufferSize;
+			Emu->GetSettings()->GetEmulationConfig().EmulationSpeed = 0;
+			Emu->GetSettings()->GetEmulationConfig().RewindSpeed = 0;
+
+			Input.reset(new InputProvider(Emu.get()));
+			Capture.reset(new RamCapture(Emu.get(), targetFrame));
+			Emu->GetNotificationManager()->RegisterNotificationListener(Capture);
+			if(!Emu->LoadRom(VirtualFile(string(romFile)), VirtualFile())) {
+				return false;
+			}
+			//Registered after LoadRom so the rewind manager's input provider has priority
+			Emu->RegisterInputProvider(Input.get());
+			return true;
+		}
+
+		bool WaitFor(std::function<bool()> condition, int timeoutMs = 30000)
+		{
+			auto start = std::chrono::steady_clock::now();
+			while(!condition()) {
+				if(std::chrono::steady_clock::now() - start > std::chrono::milliseconds(timeoutMs)) {
+					return false;
+				}
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			}
+			return true;
+		}
+
+		bool WaitForFrame(uint32_t frame)
+		{
+			return WaitFor([&]() { return Emu->GetFrameCount() >= frame; });
+		}
+		bool WaitForRewindTo(uint32_t frame)
+		{
+			return WaitFor([&]() { return Emu->GetFrameCount() <= frame || !Emu->GetRewindManager()->IsRewinding(); });
+		}
+		bool WaitForRewindEnd()
+		{
+			return WaitFor([&]() { return !Emu->GetRewindManager()->IsRewinding(); });
+		}
+
+		void End()
+		{
+			Emu->UnregisterInputProvider(Input.get());
+			Emu->Stop(false);
+			Emu->Release();
+			Emu.reset();
+		}
+	};
+}
 
 extern "C"
 {
@@ -178,5 +299,169 @@ extern "C"
 		std::cout << "===================\n";
 
 		return failCount == 0;
+	}
+
+	//Verifies that rewinding never changes the outcome of the emulation: the RAM at the target frame
+	//must be identical with and without rewind operations (see the RewindTest classes above)
+	//Each scenario runs in its own emulator instance so a failure points to a specific operation
+	DllExport bool __stdcall RunRewindTest(const char* romFile, const char* logFile)
+	{
+		using namespace RewindTest;
+		ofstream log(logFile, ios::out | ios::trunc);
+		constexpr uint32_t targetFrame = 3000;
+
+		Run reference;
+		if(!reference.Start(romFile, 4096, targetFrame)) {
+			log << "Reference run: could not load ROM\n";
+			return false;
+		}
+		if(!reference.WaitFor([&]() { return (bool)reference.Capture->Captured; })) {
+			log << "Reference run: target frame not captured (reached frame " << reference.Emu->GetFrameCount() << ")\n";
+			reference.End();
+			return false;
+		}
+		vector<uint8_t> expectedRam = reference.Capture->Ram;
+		reference.End();
+
+		bool allPassed = true;
+		auto scenario = [&](string name, std::function<void(Run&)> actions) {
+			Run run;
+			if(!run.Start(romFile, 4096, targetFrame)) {
+				log << name << ": could not load ROM\n";
+				allPassed = false;
+				return;
+			}
+			run.Emu->GetSettings()->GetEmulationConfig().EmulationSpeed = 500;
+			actions(run);
+			uint32_t lastOpFrame = run.Emu->GetFrameCount();
+			bool captured = run.WaitFor([&]() { return (bool)run.Capture->Captured; });
+			string result;
+			if(lastOpFrame >= targetFrame) {
+				result = "INCONCLUSIVE (operations ended after the target frame)";
+			} else if(!captured) {
+				result = "FAIL (target frame not reached)";
+			} else if(run.Capture->Ram != expectedRam) {
+				int diffCount = 0;
+				int firstDiff = -1;
+				for(size_t i = 0; i < expectedRam.size(); i++) {
+					if(run.Capture->Ram[i] != expectedRam[i]) {
+						diffCount++;
+						if(firstDiff < 0) {
+							firstDiff = (int)i;
+						}
+					}
+				}
+				result = "FAIL (" + std::to_string(diffCount) + " RAM bytes differ, first at $" + HexUtilities::ToHex((uint16_t)firstDiff) + ")";
+			} else {
+				result = "PASS";
+			}
+			if(result != "PASS") {
+				allPassed = false;
+			}
+			//Check that the history is consistent: replaying an entry's frames must lead exactly to the next entry's
+			//frame (within a segment). Overlapping/duplicated frames would desync whenever rewind stops on them.
+			{
+				auto lock = run.Emu->AcquireLock();
+				deque<RewindData> history = run.Emu->GetRewindManager()->GetHistory();
+				int badEntries = 0;
+				string firstBad;
+				for(size_t i = 0; i + 1 < history.size(); i++) {
+					if(history[i].EndOfSegment) {
+						continue;
+					}
+					history[i].LoadState(run.Emu.get(), false);
+					uint32_t start = run.Emu->GetFrameCount();
+					history[i + 1].LoadState(run.Emu.get(), false);
+					uint32_t next = run.Emu->GetFrameCount();
+					if(start + history[i].FrameCount != next) {
+						if(badEntries++ == 0) {
+							firstBad = "entry at frame " + std::to_string(start) + " has " + std::to_string(history[i].FrameCount) + " frames but the next entry is at frame " + std::to_string(next);
+						}
+					}
+				}
+				if(badEntries) {
+					result = (result == "PASS" ? "FAIL" : result) + " - history inconsistent: " + std::to_string(badEntries) + " bad entries, first: " + firstBad;
+					allPassed = false;
+				}
+			}
+
+			log << name << ": " << result << "\n";
+			run.End();
+		};
+
+		auto hold = [&](Run& run, uint32_t startFrame, uint32_t rewindToFrame) {
+			run.WaitForFrame(startFrame);
+			RewindManager* rewind = run.Emu->GetRewindManager();
+			uint32_t from = run.Emu->GetFrameCount();
+			rewind->StartRewinding();
+			run.WaitForRewindTo(rewindToFrame);
+			uint32_t to = run.Emu->GetFrameCount();
+			rewind->StopRewinding();
+			run.WaitForRewindEnd();
+			log << "  hold: frame " << from << " -> " << to << ", resumed at " << run.Emu->GetFrameCount() << "\n";
+		};
+
+		auto taps = [&](Run& run, int count) {
+			RewindManager* rewind = run.Emu->GetRewindManager();
+			for(int i = 0; i < count; i++) {
+				run.WaitForFrame(run.Emu->GetFrameCount() + 3 + (i % 5));
+				rewind->StartRewinding();
+				if(i % 2) {
+					std::this_thread::sleep_for(std::chrono::milliseconds(i % 7));
+				}
+				rewind->StopRewinding();
+				run.WaitForRewindEnd();
+			}
+			log << "  " << count << " taps, ended at frame " << run.Emu->GetFrameCount() << "\n";
+		};
+
+		scenario("No rewind", [&](Run& run) { run.WaitForFrame(500); });
+		scenario("Hold once", [&](Run& run) { hold(run, 400, 300); });
+		scenario("Hold twice (crossing first resume point)", [&](Run& run) {
+			hold(run, 400, 300);
+			hold(run, 500, 250);
+		});
+		scenario("Quick taps", [&](Run& run) {
+			run.WaitForFrame(300);
+			taps(run, 25);
+		});
+		scenario("Quick taps, then hold across them", [&](Run& run) {
+			run.WaitForFrame(300);
+			taps(run, 25);
+			uint32_t frame = run.Emu->GetFrameCount();
+			hold(run, frame + 30, 280);
+		});
+		scenario("RewindSeconds(3)", [&](Run& run) {
+			run.WaitForFrame(500);
+			uint32_t before = run.Emu->GetFrameCount();
+			run.Emu->GetRewindManager()->RewindSeconds(3);
+			log << "  frame " << before << " -> " << run.Emu->GetFrameCount() << " (expected ~" << (uint32_t)(3 * run.Emu->GetFps()) << " frames back)\n";
+		});
+		scenario("RewindSeconds(3), then hold across the jump", [&](Run& run) {
+			run.WaitForFrame(500);
+			run.Emu->GetRewindManager()->RewindSeconds(3);
+			uint32_t frame = run.Emu->GetFrameCount();
+			hold(run, frame + 60, frame - 60);
+		});
+
+		//Performance: frames per second at unlimited speed, with and without rewind
+		for(uint32_t bufferSize : { 0u, 4096u }) {
+			Run perf;
+			perf.Start(romFile, bufferSize, 0xFFFFFFFF);
+			perf.WaitForFrame(100);
+			auto start = std::chrono::steady_clock::now();
+			perf.WaitForFrame(5100);
+			double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+			RewindStats stats = perf.Emu->GetRewindManager()->GetStats();
+			log << "Speed with rewind " << (bufferSize ? "enabled" : "disabled") << ": " << (int)(5000 / seconds) << " fps";
+			if(stats.HistorySize) {
+				log << " (" << stats.MemoryUsage / stats.HistorySize << " bytes per frame)";
+			}
+			log << "\n";
+			perf.End();
+		}
+
+		log << (allPassed ? "PASS" : "FAIL") << "\n";
+		return allPassed;
 	}
 }

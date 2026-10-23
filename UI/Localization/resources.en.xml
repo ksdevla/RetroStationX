@@ -788,7 +788,7 @@
 			<Control ID="chkEnableAutoSaveState">Automatically create a save state every </Control>
 			<Control ID="lblSaveStateMinutes">minutes (game clock)</Control>
 			<Control ID="lblRewind">Allow rewind to use up to </Control>
-			<Control ID="lblRewindMinutes">MB of memory (Memory Usage ≈5MB/min)</Control>
+			<Control ID="lblRewindMinutes">MB of memory (a snapshot is kept for every frame, uncompressed)</Control>
 
 			<Control ID="tpgShortcuts">Shortcut Keys</Control>
 

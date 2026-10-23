@@ -31,7 +31,7 @@ struct VideoFrame
 
 struct RewindStats
 {
-	uint32_t MemoryUsage;
+	uint64_t MemoryUsage;
 	uint32_t HistorySize;
 	uint32_t HistoryDuration;
 };
@@ -39,7 +39,7 @@ struct RewindStats
 class RewindManager : public INotificationListener, public IInputProvider, public IInputRecorder
 {
 public:
-	static constexpr int32_t BufferSize = 30; //Number of frames between each save state
+	static constexpr int32_t BufferSize = 1; //Number of frames between each save state (a state is saved every frame)
 
 private:
 	Emulator* _emu = nullptr;
@@ -49,6 +49,7 @@ private:
 
 	deque<RewindData> _history;
 	deque<RewindData> _historyBackup;
+	uint64_t _historyMemoryUsage = 0; //Size of the save states in _history, in bytes
 	RewindData _currentHistory = {};
 
 	RewindState _rewindState = RewindState::Stopped;
@@ -61,6 +62,10 @@ private:
 
 	void AddHistoryBlock();
 	void PopHistory();
+
+	void HistoryPushBack(RewindData data);
+	RewindData HistoryPopBack();
+	void HistoryPopFront();
 
 	void Start(bool forDebugger);
 	void InternalStart(bool forDebugger);

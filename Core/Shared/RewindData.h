@@ -8,21 +8,18 @@ class Emulator;
 class RewindData
 {
 private:
-	vector<uint8_t> _saveStateData;
-	vector<uint8_t> _uncompressedData;
-
-	template<typename T>
-	void ProcessXorState(T& data, deque<RewindData>& prevStates, int32_t position);
+	//Uncompressed save state, taken at the start of this entry's frame(s)
+	//The data is never modified once saved, so copies of this entry (e.g for the history viewer) share it
+	shared_ptr<const vector<uint8_t>> _saveStateData;
 
 public:
 	std::deque<ControlDeviceState> InputLogs[BaseControlDevice::PortCount];
 	int32_t FrameCount = 0;
 	bool EndOfSegment = false;
-	bool IsFullState = false;
 
-	void GetStateData(stringstream& stateData, deque<RewindData>& prevStates, int32_t position);
-	uint32_t GetStateSize() { return (uint32_t)_saveStateData.size(); }
+	void GetStateData(stringstream& stateData);
+	uint64_t GetStateSize() { return _saveStateData ? _saveStateData->size() : 0; }
 
-	void LoadState(Emulator* emu, deque<RewindData>& prevStates, int32_t position = -1, bool sendNotification = true);
-	void SaveState(Emulator* emu, deque<RewindData>& prevStates, int32_t position = -1);
+	void LoadState(Emulator* emu, bool sendNotification = true);
+	void SaveState(Emulator* emu);
 };

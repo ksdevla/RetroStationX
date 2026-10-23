@@ -204,7 +204,7 @@
 						</StackPanel>
 						<StackPanel Orientation="Horizontal">
 							<CheckBox Content="{l:Translate lblRewind}" IsChecked="{Binding Config.EnableRewind}" />
-							<c:MesenNumericUpDown Value="{Binding Config.RewindBufferSize}" Margin="5 0" Minimum="0" Maximum="999" IsEnabled="{Binding Config.EnableRewind}" />
+							<c:MesenNumericUpDown Value="{Binding Config.RewindBufferSize}" Margin="5 0" Minimum="0" Maximum="65536" IsEnabled="{Binding Config.EnableRewind}" />
 							<TextBlock Text="{l:Translate lblRewindMinutes}" />
 						</StackPanel>
 					</c:OptionSection>

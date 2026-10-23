@@ -44,6 +44,7 @@ void RewindManager::ClearBuffer()
 {
 	_hasHistory = false;
 	_history.clear();
+	_historyMemoryUsage = 0;
 	_historyBackup.clear();
 	_framesToFastForward = 0;
 	_videoHistory.clear();
@@ -106,13 +107,8 @@ void RewindManager::ProcessNotification(ConsoleNotificationType type, void* para
 
 RewindStats RewindManager::GetStats()
 {
-	uint32_t memoryUsage = 0;
-	for(int i = (int)_history.size() - 1; i >= 0; i--) {
-		memoryUsage += _history[i].GetStateSize();
-	}
-
 	RewindStats stats = {};
-	stats.MemoryUsage = memoryUsage;
+	stats.MemoryUsage = _historyMemoryUsage;
 	stats.HistorySize = (uint32_t)_history.size();
 	stats.HistoryDuration = stats.HistorySize * RewindManager::BufferSize;
 	return stats;
@@ -122,29 +118,39 @@ void RewindManager::AddHistoryBlock()
 {
 	uint32_t maxHistorySize = _settings->GetPreferences().RewindBufferSize;
 	if(maxHistorySize > 0) {
-		uint32_t memoryUsage = 0;
-		for(int i = (int)_history.size() - 1; i >= 0; i--) {
-			memoryUsage += _history[i].GetStateSize();
-			if((memoryUsage >> 20) >= maxHistorySize) {
-				//Remove all old state data above the memory limit
-				for(int j = 0; j < i; j++) {
-					_history.pop_front();
-				}
-
-				while(_history.size() > 0 && !_history.front().IsFullState) {
-					//Remove everything until the next full state
-					_history.pop_front();
-				}
-				break;
-			}
-		}
-
 		if(_currentHistory.FrameCount > 0) {
-			_history.push_back(_currentHistory);
+			HistoryPushBack(std::move(_currentHistory));
 		}
+
+		//Remove the oldest states above the memory limit (the setting is in MB)
+		uint64_t maxMemoryUsage = (uint64_t)maxHistorySize << 20;
+		while(_historyMemoryUsage > maxMemoryUsage && !_history.empty()) {
+			HistoryPopFront();
+		}
+
 		_currentHistory = RewindData();
-		_currentHistory.SaveState(_emu, _history);
+		_currentHistory.SaveState(_emu);
 	}
+}
+
+void RewindManager::HistoryPushBack(RewindData data)
+{
+	_historyMemoryUsage += data.GetStateSize();
+	_history.push_back(std::move(data));
+}
+
+RewindData RewindManager::HistoryPopBack()
+{
+	RewindData data = std::move(_history.back());
+	_history.pop_back();
+	_historyMemoryUsage -= data.GetStateSize();
+	return data;
+}
+
+void RewindManager::HistoryPopFront()
+{
+	_historyMemoryUsage -= _history.front().GetStateSize();
+	_history.pop_front();
 }
 
 void RewindManager::PopHistory()
@@ -153,19 +159,17 @@ void RewindManager::PopHistory()
 		StopRewinding();
 	} else {
 		if(_currentHistory.FrameCount <= 0 && !IsStepBack()) {
-			_currentHistory = _history.back();
-			_history.pop_back();
+			_currentHistory = HistoryPopBack();
 		}
 
 		if(IsStepBack() && _currentHistory.FrameCount <= 1 && !_history.empty() && !_history.back().EndOfSegment) {
 			//Go back an extra frame to ensure step back works across 30-frame chunks
 			_historyBackup.push_front(_currentHistory);
-			_currentHistory = _history.back();
-			_history.pop_back();
+			_currentHistory = HistoryPopBack();
 		}
 
 		_historyBackup.push_front(_currentHistory);
-		_currentHistory.LoadState(_emu, _history, -1, false);
+		_currentHistory.LoadState(_emu, false);
 
 		if(!_audioHistoryBuilder.empty()) {
 			_audioHistory.insert(_audioHistory.begin(), _audioHistoryBuilder.begin(), _audioHistoryBuilder.end());
@@ -236,7 +240,7 @@ void RewindManager::ForceStop(bool deleteFutureData)
 			}
 		} else {
 			while(_historyBackup.size() > 1) {
-				_history.push_back(_historyBackup.front());
+				HistoryPushBack(_historyBackup.front());
 				_historyBackup.pop_front();
 			}
 			_currentHistory = _historyBackup.front();
@@ -264,7 +268,7 @@ void RewindManager::Stop()
 			if(_historyBackup.size() > 1) {
 				_framesToFastForward = (uint32_t)_videoHistory.size() + _historyBackup.front().FrameCount;
 				do {
-					_history.push_back(_historyBackup.front());
+					HistoryPushBack(_historyBackup.front());
 					_framesToFastForward -= _historyBackup.front().FrameCount;
 					_historyBackup.pop_front();
 
@@ -275,19 +279,26 @@ void RewindManager::Stop()
 			//We started rewinding, but didn't actually visually rewind anything yet
 			//Move back to the save state containing the frame currently shown on the screen
 			while(_historyBackup.size() > 1) {
-				_history.push_back(_historyBackup.front());
+				HistoryPushBack(_historyBackup.front());
 				_historyBackup.pop_front();
 			}
 			_currentHistory = _historyBackup.front();
 			_framesToFastForward = _historyBackup.front().FrameCount;
 		}
 
-		_currentHistory.LoadState(_emu, _history);
+		_currentHistory.LoadState(_emu);
 		if(_framesToFastForward > 0) {
 			_rewindState = RewindState::Stopping;
 			_currentHistory.FrameCount = 0;
 			_settings->SetFlag(EmulationFlags::MaximumSpeed);
 		} else {
+			//Resuming exactly at the start of this entry: no frames have been played from its state yet,
+			//so drop its old frame count/inputs - otherwise new inputs get appended to the old ones and the history desyncs
+			_currentHistory.FrameCount = 0;
+			for(int i = 0; i < BaseControlDevice::PortCount; i++) {
+				_currentHistory.InputLogs[i].clear();
+			}
+
 			_rewindState = RewindState::Stopped;
 			_historyBackup.clear();
 			_settings->ClearFlag(EmulationFlags::MaximumSpeed);
@@ -312,7 +323,7 @@ void RewindManager::ProcessEndOfFrame()
 			//Reached the end of the current 30-frame block, move to the next,
 			//the step back target cycle could be at the start of the next block
 			if(_historyBackup.size() > 1) {
-				_history.push_back(_historyBackup.front());
+				HistoryPushBack(_historyBackup.front());
 				_historyBackup.pop_front();
 				_currentHistory = _historyBackup.front();
 			}
@@ -453,18 +464,23 @@ bool RewindManager::IsStepBack()
 void RewindManager::RewindSeconds(uint32_t seconds)
 {
 	if(_rewindState == RewindState::Stopped) {
-		uint32_t removeCount = (seconds * 60 / RewindManager::BufferSize) + 1;
 		auto lock = _emu->AcquireLock();
+
+		//Use the console's actual frame rate (e.g 50 fps for PAL, 75 fps for WonderSwan)
+		double fps = _emu->GetFps();
+		if(fps <= 0) {
+			fps = 60;
+		}
+		uint32_t removeCount = (uint32_t)(seconds * fps / RewindManager::BufferSize) + 1;
 
 		for(uint32_t i = 0; i < removeCount; i++) {
 			if(!_history.empty()) {
-				_currentHistory = _history.back();
-				_history.pop_back();
+				_currentHistory = HistoryPopBack();
 			} else {
 				break;
 			}
 		}
-		_currentHistory.LoadState(_emu, _history);
+		_currentHistory.LoadState(_emu);
 	}
 }
 

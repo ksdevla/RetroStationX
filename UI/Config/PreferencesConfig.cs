@@ -53,7 +53,7 @@ namespace Mesen.Config
 		[ObservableProperty] public partial UInt32 AutoSaveStateDelay { get; set; } = 5;
 
 		[ObservableProperty] public partial bool EnableRewind { get; set; } = true;
-		[ObservableProperty] public partial UInt32 RewindBufferSize { get; set; } = 300;
+		[ObservableProperty] public partial UInt32 RewindBufferSize { get; set; } = 4096;
 
 		[ObservableProperty] public partial bool AlwaysOnTop { get; set; } = false;
 

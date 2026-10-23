@@ -215,7 +215,7 @@ bool MovieRecorder::CreateMovie(string movieFile, deque<RewindData>& data, uint3
 			_hasSaveState = true;
 			_saveStateData = stringstream();
 			_emu->GetSaveStateManager()->GetSaveStateHeader(_saveStateData);
-			data[startPosition].GetStateData(_saveStateData, data, startPosition);
+			data[startPosition].GetStateData(_saveStateData);
 		}
 
 		_inputData = stringstream();
@@ -228,7 +228,7 @@ bool MovieRecorder::CreateMovie(string movieFile, deque<RewindData>& data, uint3
 		bool skipFirstInput = _hasSaveState && startPosition == 0;
 
 		for(uint32_t i = startPosition; i < endPosition; i++) {
-			RewindData rewindData = data[i];
+			RewindData& rewindData = data[i];
 			uint32_t len = 0;
 
 			//Some blocks (like the first block after power cycle) can contain an extra set of inputs

@@ -34,7 +34,9 @@ private:
 	Emulator* _mainEmu = nullptr;
 	deque<RewindData> _history;
 	uint32_t _position = 0;
-	uint32_t _pollCounter = 0;
+	uint32_t _pollCounters[BaseControlDevice::PortCount] = {}; //Number of inputs read from the current entry, per port
+
+	void ResetPollCounters();
 
 public:
 	HistoryViewer(Emulator* emu);

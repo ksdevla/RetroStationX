@@ -17,7 +17,14 @@ HistoryViewer::HistoryViewer(Emulator* emu)
 {
 	_emu = emu;
 	_position = 0;
-	_pollCounter = 0;
+	ResetPollCounters();
+}
+
+void HistoryViewer::ResetPollCounters()
+{
+	for(int i = 0; i < BaseControlDevice::PortCount; i++) {
+		_pollCounters[i] = 0;
+	}
 }
 
 HistoryViewer::~HistoryViewer()
@@ -102,11 +109,10 @@ void HistoryViewer::SeekTo(uint32_t seekPosition)
 		auto lock = _emu->AcquireLock();
 
 		_position = seekPosition;
-		RewindData rewindData = _history[_position];
-		rewindData.LoadState(_emu, _history, _position);
+		_history[_position].LoadState(_emu);
 
 		_emu->GetSoundMixer()->StopAudio(true);
-		_pollCounter = 0;
+		ResetPollCounters();
 	}
 }
 
@@ -121,7 +127,7 @@ bool HistoryViewer::CreateSaveState(string outputFile, uint32_t position)
 
 	std::stringstream stateData;
 	_emu->GetSaveStateManager()->GetSaveStateHeader(stateData);
-	_history[position].GetStateData(stateData, _history, position);
+	_history[position].GetStateData(stateData);
 
 	ofstream output(outputFile, ios::binary);
 	if(output) {
@@ -168,24 +174,28 @@ void HistoryViewer::ResumeGameplay(uint32_t resumePosition)
 	}
 
 	if(resumePosition < _history.size()) {
-		_history[resumePosition].LoadState(_mainEmu, _history, resumePosition);
+		_history[resumePosition].LoadState(_mainEmu);
 	} else {
-		_history[_history.size() - 1].LoadState(_mainEmu, _history, (int32_t)_history.size() - 1);
+		_history[_history.size() - 1].LoadState(_mainEmu);
 	}
 }
 
 bool HistoryViewer::SetInput(BaseControlDevice* device)
 {
 	uint8_t port = device->GetPort();
+	if(port >= BaseControlDevice::PortCount) {
+		return true;
+	}
+
+	//Each port keeps its own position - with a shared counter, the ports polled after port 0 read the next frame's input
 	if(_position < _history.size()) {
 		std::deque<ControlDeviceState>& stateData = _history[_position].InputLogs[port];
-		if(_pollCounter < stateData.size()) {
-			ControlDeviceState state = stateData[_pollCounter];
-			device->SetRawState(state);
+		if(_pollCounters[port] < stateData.size()) {
+			device->SetRawState(stateData[_pollCounters[port]]);
 		}
 	}
-	if(port == 0 && _pollCounter < RewindManager::BufferSize) {
-		_pollCounter++;
+	if(_pollCounters[port] < (uint32_t)RewindManager::BufferSize) {
+		_pollCounters[port]++;
 	}
 	return true;
 }
@@ -196,8 +206,8 @@ void HistoryViewer::ProcessEndOfFrame()
 		return;
 	}
 
-	if(_pollCounter >= (uint32_t)_history[_position].FrameCount) {
-		_pollCounter = 0;
+	if(_pollCounters[0] >= (uint32_t)_history[_position].FrameCount) {
+		ResetPollCounters();
 		_position++;
 
 		if(_position >= _history.size()) {
@@ -207,7 +217,6 @@ void HistoryViewer::ProcessEndOfFrame()
 			return;
 		}
 
-		RewindData rewindData = _history[_position];
-		rewindData.LoadState(_emu, _history, _position);
+		_history[_position].LoadState(_emu);
 	}
 }

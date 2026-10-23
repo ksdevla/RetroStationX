@@ -961,7 +961,7 @@ struct PreferencesConfig
 	HudDisplaySize HudSize = HudDisplaySize::Fixed;
 
 	uint32_t AutoSaveStateDelay = 5;
-	uint32_t RewindBufferSize = 300;
+	uint32_t RewindBufferSize = 4096;
 
 	const char* SaveFolderOverride = nullptr;
 	const char* SaveStateFolderOverride = nullptr;
