@@ -150,10 +150,12 @@ namespace Mesen.Config
 			m.B = InputApi.GetKeyCode(prefix + (altLayout ? "X" : "A"));
 			m.Select = InputApi.GetKeyCode(prefix + "Back");
 			m.Start = InputApi.GetKeyCode(prefix + "Start");
-			m.Up = InputApi.GetKeyCode(prefix + "Up");
-			m.Down = InputApi.GetKeyCode(prefix + "Down");
-			m.Left = InputApi.GetKeyCode(prefix + "Left");
-			m.Right = InputApi.GetKeyCode(prefix + "Right");
+
+			//Movement uses the left analog stick by default (the D-pad is left unmapped)
+			m.Up = InputApi.GetKeyCode(prefix + "LT Up");
+			m.Down = InputApi.GetKeyCode(prefix + "LT Down");
+			m.Left = InputApi.GetKeyCode(prefix + "LT Left");
+			m.Right = InputApi.GetKeyCode(prefix + "LT Right");
 
 			if(type == ControllerType.SnesController || type == ControllerType.PceAvenuePad6 || type == ControllerType.GbaController || type == ControllerType.SnesRumbleController || type == ControllerType.SnesBlueRetroController || type == ControllerType.SnesNttDataKeypad) {
 				m.X = InputApi.GetKeyCode(prefix + "Y");
@@ -184,8 +186,11 @@ namespace Mesen.Config
 				m.Left = InputApi.GetKeyCode(prefix + "RT Up");
 				m.Right = InputApi.GetKeyCode(prefix + "RT Down");
 			} else {
-				m.TurboA = InputApi.GetKeyCode(prefix + (altLayout ? "B" : "Y"));
-				m.TurboB = InputApi.GetKeyCode(prefix + (altLayout ? "Y" : "X"));
+				//2-button controllers (NES, Game Boy, etc.): A/B on the left/bottom buttons, turbo on the right/top buttons
+				m.A = InputApi.GetKeyCode(prefix + "A");
+				m.B = InputApi.GetKeyCode(prefix + "X");
+				m.TurboA = InputApi.GetKeyCode(prefix + "B");
+				m.TurboB = InputApi.GetKeyCode(prefix + "Y");
 			}
 		}
 

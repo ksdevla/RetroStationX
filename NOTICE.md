@@ -17,6 +17,9 @@ RetroStationX was forked from MesenCE commit `4b8a196` in October 2026. Changes 
 - **2026-10:** Renamed the application to RetroStationX: product name, window titles, About window, messages, executable and macOS bundle names, Linux desktop entry, and CI artifacts. Replaced the application icon.
 - **2026-10:** Gave the fork its own OS identifiers so it can be installed next to Mesen2 or MesenCE without conflicts. This covers the settings folder, the single-instance ID, Windows file-association ProgID, Linux MIME types, icon and `.desktop` names, and the macOS bundle identifier.
 - **2026-10:** Turned off the MesenCE auto-updater feed until RetroStationX publishes its own.
+- **2026-10:** Rewind saves an uncompressed snapshot every frame (instead of a compressed one every 30 frames). The default memory limit is now 4 GB. Fixed rewind history corruption when resuming exactly on a snapshot, History Viewer input for ports other than player 1, and "Rewind N seconds" on non-60 FPS systems.
+- **2026-10:** Changed the default Xbox controller layout for 2-button controllers (A = A, B = X, Turbo A = B, Turbo B = Y), with movement on the left analog stick.
+- **2026-10:** Fixed published builds failing to start ("missing dependencies") after a normal build, and removed debug symbol files from published builds.
 
 For the full list of changes, see the git history after commit `4b8a196`.
 
