@@ -680,7 +680,14 @@
 		<NugetDependencyFiles Include="$(OutDir)libSkiaSharp.$(DllExtension)" />
 	</ItemGroup>
 
-	<Target Name="ZipDependencies" BeforeTargets="PreBuildEvent" AfterTargets="Restore" Inputs="@(DependencyFiles);@(NugetDependencyFiles);$(OutDir)NugetTimestamp.txt" Outputs="$(ProjectDir)Dependencies.zip">
+	<!-- The zip's content depends on OptimizeUi (the core DLL is only embedded when it's true), so record the mode as an input -->
+	<!-- Otherwise a normal VS build followed by a publish keeps the zip without MesenCore and the published exe can't start -->
+	<Target Name="WriteDependenciesMode" BeforeTargets="ZipDependencies">
+		<MakeDir Directories="$(OutDir)" />
+		<WriteLinesToFile File="$(OutDir)DependenciesMode.txt" Lines="OptimizeUi=$(OptimizeUi)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+	</Target>
+
+	<Target Name="ZipDependencies" BeforeTargets="PreBuildEvent" AfterTargets="Restore" Inputs="@(DependencyFiles);@(NugetDependencyFiles);$(OutDir)NugetTimestamp.txt;$(OutDir)DependenciesMode.txt" Outputs="$(ProjectDir)Dependencies.zip">
 		<RemoveDir Directories="$(OutDir)Dependencies" />
 		<Copy SourceFiles="@(DependencyFiles)" DestinationFolder="$(OutDir)Dependencies/%(RecursiveDir)" />
 
@@ -689,6 +696,13 @@
 
 		<Copy Condition="'$(RuntimeIdentifier)'=='osx-x64' Or '$(RuntimeIdentifier)'=='osx-arm64'" SourceFiles="./Assets/AppIcon.icns" DestinationFolder="$(OutDir)" />
 		<ZipDirectory SourceDirectory="$(OutDir)Dependencies" DestinationFile="$(ProjectDir)Dependencies.zip" Overwrite="true" />
+	</Target>
+
+	<!-- When debug symbols are disabled (e.g. by the Release publish profile), also leave out the .pdb files that NuGet packages (SkiaSharp, HarfBuzzSharp) ship -->
+	<Target Name="RemovePackagePdbsFromPublish" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(DebugType)'=='none'">
+		<ItemGroup>
+			<ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)'=='.pdb'" />
+		</ItemGroup>
 	</Target>
 
 	<Target Name="CleanDependencies" AfterTargets="Clean">
